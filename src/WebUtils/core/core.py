@@ -17,7 +17,6 @@ __all__: Final[List[str]] = [
     "HeaderBuilder",
     "HTTPMethod",
     "HTTPResponse",
-    "HTTPResponseType",
     "HTTPResponseFactory",
     "HTTPResponseBuilder",
     "HTTPService",
@@ -829,13 +828,13 @@ class HTTPResponseBuilder:
 
     def with_type(
         self,
-        value: HTTPResponseType,
+        value: str,
     ) -> Self:
         """
         Set the type of the response.
 
         :param value: The type of the response.
-        :type value: HTTPResponseType
+        :type value: str
 
         :return: The builder to the caller.
         :rtype: Self
@@ -1067,7 +1066,7 @@ class HTTPService:
                     builder.with_status(value=response.status)
 
                     # Set the type of the response
-                    builder.with_type(value=HTTPResponseType.JSON)
+                    builder.with_type(value=str.JSON)
 
                     # Set the message of the response
                     builder.with_message(value=response.reason)
@@ -1170,7 +1169,7 @@ class HTTPService:
                     builder.with_status(value=response.status)
 
                     # Set the type of the response
-                    builder.with_type(value=HTTPResponseType.JSON)
+                    builder.with_type(value=str.JSON)
 
                     # Set the message of the response
                     builder.with_message(value=response.reason)
@@ -1273,7 +1272,7 @@ class HTTPService:
                     builder.with_status(value=response.status)
 
                     # Set the type of the response
-                    builder.with_type(value=HTTPResponseType.JSON)
+                    builder.with_type(value=str.JSON)
 
                     # Set the message of the response
                     builder.with_message(value=response.reason)
@@ -1376,7 +1375,7 @@ class HTTPService:
                     builder.with_status(value=response.status)
 
                     # Set the type of the response
-                    builder.with_type(value=HTTPResponseType.JSON)
+                    builder.with_type(value=str.JSON)
 
                     # Set the message of the response
                     builder.with_message(value=response.reason)
@@ -1472,7 +1471,7 @@ class HTTPService:
                     builder.with_status(value=response.status)
 
                     # Set the type of the response
-                    builder.with_type(value=HTTPResponseType.JSON)
+                    builder.with_type(value=str.JSON)
 
                     # Set the message of the response
                     builder.with_message(value=response.reason)
@@ -1558,7 +1557,7 @@ class HTTPService:
                     builder.with_status(value=response.status)
 
                     # Set the type of the response
-                    builder.with_type(value=HTTPResponseType.JSON)
+                    builder.with_type(value=str.JSON)
 
                     # Set the message of the response
                     builder.with_message(value=response.reason)
