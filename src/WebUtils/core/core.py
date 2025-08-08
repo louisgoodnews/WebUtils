@@ -9,7 +9,7 @@ import base64
 
 from enum import Enum
 from datetime import datetime
-from typing import Any, Dict, Final, List, Literal, Optional, Self
+from typing import Any, Dict, Final, List, Literal, Optional, Self, Union
 
 
 __all__: Final[List[str]] = [
@@ -900,6 +900,8 @@ class HTTPService:
             return await response.text()
         elif content_type == "application/octet-stream":
             return await response.read()
+        elif content_type.startswith("image/"):
+            return await response.read()
         else:
             return await response.text()
 
@@ -957,7 +959,6 @@ class HTTPService:
                     url,
                     **kwargs,
                 ) as response:
-                    print(response.content_type)
                     # Raise an exception if the response is not successful
                     response.raise_for_status()
 
