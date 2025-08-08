@@ -959,9 +959,6 @@ class HTTPService:
                     url,
                     **kwargs,
                 ) as response:
-                    # Raise an exception if the response is not successful
-                    response.raise_for_status()
-
                     # Set the status of the response
                     builder.with_status(value=response.status)
 
@@ -1060,9 +1057,6 @@ class HTTPService:
                     data=data,
                     **kwargs,
                 ) as response:
-                    # Raise an exception if the response is not successful
-                    response.raise_for_status()
-
                     # Set the status of the response
                     builder.with_status(value=response.status)
 
@@ -1163,9 +1157,6 @@ class HTTPService:
                     data=data,
                     **kwargs,
                 ) as response:
-                    # Raise an exception if the response is not successful
-                    response.raise_for_status()
-
                     # Set the status of the response
                     builder.with_status(value=response.status)
 
@@ -1266,9 +1257,6 @@ class HTTPService:
                     data=data,
                     **kwargs,
                 ) as response:
-                    # Raise an exception if the response is not successful
-                    response.raise_for_status()
-
                     # Set the status of the response
                     builder.with_status(value=response.status)
 
@@ -1369,9 +1357,6 @@ class HTTPService:
                     data=data,
                     **kwargs,
                 ) as response:
-                    # Raise an exception if the response is not successful
-                    response.raise_for_status()
-
                     # Set the status of the response
                     builder.with_status(value=response.status)
 
@@ -1465,9 +1450,6 @@ class HTTPService:
                     headers=headers,
                     **kwargs,
                 ) as response:
-                    # Raise an exception if the response is not successful
-                    response.raise_for_status()
-
                     # Set the status of the response
                     builder.with_status(value=response.status)
 
@@ -1551,9 +1533,6 @@ class HTTPService:
                     url,
                     **kwargs,
                 ) as response:
-                    # Raise an exception if the response is not successful
-                    response.raise_for_status()
-
                     # Set the status of the response
                     builder.with_status(value=response.status)
 
