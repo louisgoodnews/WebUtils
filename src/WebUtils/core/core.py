@@ -287,35 +287,6 @@ class HTTPMethod(Enum):
         return self.value
 
 
-class HTTPResponseType(Enum):
-    """
-    HTTP Response Type enum.
-
-    This class is used to represent the HTTP response type.
-
-    :cvar JSON: JSON response type.
-    :cvar XML: XML response type.
-    :cvar HTML: HTML response type.
-    :cvar TEXT: TEXT response type.
-    """
-
-    JSON = "json"
-    XML = "xml"
-    HTML = "html"
-    TEXT = "text"
-
-    def __str__(self) -> str:
-        """
-        Return the value of the enum member.
-
-        :return: The value of the enum member.
-        :rtype: str
-        """
-
-        # Return the value of the enum member
-        return self.value
-
-
 class HTTPResponse:
     """
     HTTP Response class.
@@ -331,7 +302,7 @@ class HTTPResponse:
         method (HTTPMethod): The method of the response.
         start (datetime): The start time of the response.
         status (int): The status of the response.
-        type (HTTPResponseType): The type of the response.
+        type (str): The type of the response.
         url (str): The URL of the response.
     """
 
@@ -343,7 +314,7 @@ class HTTPResponse:
         method: HTTPMethod,
         start: datetime,
         status: int,
-        type: HTTPResponseType,
+        type: str,
         url: str,
         body: Optional[Dict[str, Any]] = None,
     ) -> None:
@@ -365,7 +336,7 @@ class HTTPResponse:
         :param status: The status of the response.
         :type status: int
         :param type: The type of the response.
-        :type type: HTTPResponseType
+        :type type: str
         :param url: The URL of the response.
         :type url: str
 
@@ -395,7 +366,7 @@ class HTTPResponse:
         self._status: Final[int] = status
 
         # Store the type of the response
-        self._type: Final[HTTPResponseType] = type
+        self._type: Final[str] = type
 
         # Store the URL of the response
         self._url: Final[str] = url
@@ -542,12 +513,12 @@ class HTTPResponse:
         return self._status
 
     @property
-    def type(self) -> HTTPResponseType:
+    def type(self) -> str:
         """
         Return the type of the response.
 
         :return: The type of the response.
-        :rtype: HTTPResponseType
+        :rtype: str
         """
 
         # Return the type of the response
@@ -583,7 +554,7 @@ class HTTPResponse:
             "method": self._method.value,
             "start": self._start.strftime("%Y-%m-%d %H:%M:%S"),
             "status": self._status,
-            "type": self._type.value,
+            "type": self._type,
             "url": self._url,
         }
 
@@ -626,7 +597,7 @@ class HTTPResponseFactory:
         method: HTTPMethod,
         start: datetime,
         status: int,
-        type: HTTPResponseType,
+        type: str,
         url: str,
         body: Optional[Dict[str, Any]] = None,
     ) -> HTTPResponse:
@@ -646,7 +617,7 @@ class HTTPResponseFactory:
         :param status: The status of the response.
         :type status: int
         :param type: The type of the response.
-        :type type: HTTPResponseType
+        :type type: str
         :param url: The URL of the response.
         :type url: str
         :param body: The body of the response.
@@ -716,20 +687,22 @@ class HTTPResponseBuilder:
 
     def with_body(
         self,
-        value: Dict[str, Any],
+        value: Any,
     ) -> Self:
         """
         Set the body of the response.
 
         :param value: The body of the response.
-        :type value: Dict[str, Any]
+        :type value: Any
 
         :return: The builder to the caller.
         :rtype: Self
         """
 
         # Store the body of the response
-        self._configuration["body"] = value
+        self._configuration["body"] = (
+            value if isinstance(value, dict) else {"body": value}
+        )
 
         # Return the builder to the caller
         return self
@@ -901,11 +874,40 @@ class HTTPService:
     """
 
     @classmethod
+    async def _handle_content_type(
+        cls,
+        content_type: str,
+        response: aiohttp.ClientResponse,
+    ) -> Union[
+        bytes,
+        Dict[str, Any],
+        str,
+    ]:
+        """
+        Handle the content type of the response.
+
+        :param content_type: The content type of the response.
+        :type content_type: str
+        :param response: The response object.
+        :type response: aiohttp.ClientResponse
+
+        :return: The content of the response.
+        :rtype: Union[bytes, Dict[str, Any], str]
+        """
+
+        if content_type == "application/json":
+            return await response.json()
+        elif content_type == "application/xml":
+            return await response.text()
+        elif content_type == "application/octet-stream":
+            return await response.read()
+        else:
+            return await response.text()
+
+    @classmethod
     def get(
         cls,
         url: str,
-        data: Dict[str, Any] = {},
-        headers: Dict[str, Any] = {},
         **kwargs,
     ) -> HTTPResponse:
         """
@@ -913,10 +915,6 @@ class HTTPService:
 
         :param url: The URL to make the GET request to.
         :type url: str
-        :param data: The data to send with the GET request.
-        :type data: Dict[str, Any]
-        :param headers: The headers to send with the GET request.
-        :type headers: Dict[str, Any]
         :param kwargs: Additional keyword arguments to pass to the GET request.
         :type kwargs: Dict[str, Any]
 
@@ -926,8 +924,6 @@ class HTTPService:
 
         async def __get__(
             url: str,
-            data: Dict[str, Any] = {},
-            headers: Dict[str, Any] = {},
             **kwargs,
         ) -> HTTPResponse:
             """
@@ -935,10 +931,6 @@ class HTTPService:
 
             :param url: The URL to make the GET request to.
             :type url: str
-            :param data: The data to send with the GET request.
-            :type data: Dict[str, Any]
-            :param headers: The headers to send with the GET request.
-            :type headers: Dict[str, Any]
             :param kwargs: Additional keyword arguments to pass to the GET request.
             :type kwargs: Dict[str, Any]
 
@@ -956,7 +948,7 @@ class HTTPService:
             builder.with_url(value=url)
 
             # Set the headers of the response
-            builder.with_headers(value=headers)
+            builder.with_headers(value={})
 
             # Set the start time of the response
             builder.with_start(value=datetime.now())
@@ -964,10 +956,9 @@ class HTTPService:
             async with aiohttp.ClientSession() as session:
                 async with session.get(
                     url,
-                    headers=headers,
-                    data=data,
                     **kwargs,
                 ) as response:
+                    print(response.content_type)
                     # Raise an exception if the response is not successful
                     response.raise_for_status()
 
@@ -977,16 +968,15 @@ class HTTPService:
                     # Set the message of the response
                     builder.with_message(value=response.reason)
 
-                    try:
-                        # Set the body of the response
-                        builder.with_body(value=await response.json())
-                        # Set the type of the response
-                        builder.with_type(value=HTTPResponseType.JSON)
-                    except Exception:
-                        # Set the body of the response
-                        builder.with_body(value=await response.text())
-                        # Set the type of the response
-                        builder.with_type(value=HTTPResponseType.TEXT)
+                    # Set the type of the response
+                    builder.with_type(value=response.content_type)
+
+                    builder.with_body(
+                        await cls._handle_content_type(
+                            content_type=response.content_type,
+                            response=response,
+                        )
+                    )
 
                     # Set the end time of the response
                     builder.with_end(value=datetime.now())
@@ -997,8 +987,6 @@ class HTTPService:
         # Return the HTTPResponse object
         return asyncio.run(
             __get__(
-                data=data,
-                headers=headers,
                 url=url,
                 **kwargs,
             )
@@ -1084,16 +1072,12 @@ class HTTPService:
                     # Set the message of the response
                     builder.with_message(value=response.reason)
 
-                    try:
-                        # Set the body of the response
-                        builder.with_body(value=await response.json())
-                        # Set the type of the response
-                        builder.with_type(value=HTTPResponseType.JSON)
-                    except Exception:
-                        # Set the body of the response
-                        builder.with_body(value=await response.text())
-                        # Set the type of the response
-                        builder.with_type(value=HTTPResponseType.TEXT)
+                    builder.with_body(
+                        await cls._handle_content_type(
+                            content_type=response.content_type,
+                            response=response,
+                        )
+                    )
 
                     # Set the end time of the response
                     builder.with_end(value=datetime.now())
@@ -1191,16 +1175,12 @@ class HTTPService:
                     # Set the message of the response
                     builder.with_message(value=response.reason)
 
-                    try:
-                        # Set the body of the response
-                        builder.with_body(value=await response.json())
-                        # Set the type of the response
-                        builder.with_type(value=HTTPResponseType.JSON)
-                    except Exception:
-                        # Set the body of the response
-                        builder.with_body(value=await response.text())
-                        # Set the type of the response
-                        builder.with_type(value=HTTPResponseType.TEXT)
+                    builder.with_body(
+                        await cls._handle_content_type(
+                            content_type=response.content_type,
+                            response=response,
+                        )
+                    )
 
                     # Set the end time of the response
                     builder.with_end(value=datetime.now())
@@ -1298,16 +1278,12 @@ class HTTPService:
                     # Set the message of the response
                     builder.with_message(value=response.reason)
 
-                    try:
-                        # Set the body of the response
-                        builder.with_body(value=await response.json())
-                        # Set the type of the response
-                        builder.with_type(value=HTTPResponseType.JSON)
-                    except Exception:
-                        # Set the body of the response
-                        builder.with_body(value=await response.text())
-                        # Set the type of the response
-                        builder.with_type(value=HTTPResponseType.TEXT)
+                    builder.with_body(
+                        await cls._handle_content_type(
+                            content_type=response.content_type,
+                            response=response,
+                        )
+                    )
 
                     # Set the end time of the response
                     builder.with_end(value=datetime.now())
@@ -1405,16 +1381,12 @@ class HTTPService:
                     # Set the message of the response
                     builder.with_message(value=response.reason)
 
-                    try:
-                        # Set the body of the response
-                        builder.with_body(value=await response.json())
-                        # Set the type of the response
-                        builder.with_type(value=HTTPResponseType.JSON)
-                    except Exception:
-                        # Set the body of the response
-                        builder.with_body(value=await response.text())
-                        # Set the type of the response
-                        builder.with_type(value=HTTPResponseType.TEXT)
+                    builder.with_body(
+                        await cls._handle_content_type(
+                            content_type=response.content_type,
+                            response=response,
+                        )
+                    )
 
                     # Set the end time of the response
                     builder.with_end(value=datetime.now())
@@ -1505,16 +1477,12 @@ class HTTPService:
                     # Set the message of the response
                     builder.with_message(value=response.reason)
 
-                    try:
-                        # Set the body of the response
-                        builder.with_body(value=await response.json())
-                        # Set the type of the response
-                        builder.with_type(value=HTTPResponseType.JSON)
-                    except Exception:
-                        # Set the body of the response
-                        builder.with_body(value=await response.text())
-                        # Set the type of the response
-                        builder.with_type(value=HTTPResponseType.TEXT)
+                    builder.with_body(
+                        await cls._handle_content_type(
+                            content_type=response.content_type,
+                            response=response,
+                        )
+                    )
 
                     # Set the end time of the response
                     builder.with_end(value=datetime.now())
@@ -1595,16 +1563,12 @@ class HTTPService:
                     # Set the message of the response
                     builder.with_message(value=response.reason)
 
-                    try:
-                        # Set the body of the response
-                        builder.with_body(value=await response.json())
-                        # Set the type of the response
-                        builder.with_type(value=HTTPResponseType.JSON)
-                    except Exception:
-                        # Set the body of the response
-                        builder.with_body(value=await response.text())
-                        # Set the type of the response
-                        builder.with_type(value=HTTPResponseType.TEXT)
+                    builder.with_body(
+                        await cls._handle_content_type(
+                            content_type=response.content_type,
+                            response=response,
+                        )
+                    )
 
                     # Set the end time of the response
                     builder.with_end(value=datetime.now())
