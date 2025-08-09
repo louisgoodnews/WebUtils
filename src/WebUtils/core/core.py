@@ -1604,3 +1604,59 @@ class URLBuilder:
 
         # Return the URL with the endpoint
         return f"{self._configuration['url']}/{value}"
+
+    def with_endpoint_query(
+        self,
+        value: str,
+        **kwargs: Any,
+    ) -> str:
+        """
+        Set the endpoint and query of the URL.
+
+        :param value: The endpoint of the URL.
+        :type value: str
+        :param kwargs: The query of the URL.
+        :type kwargs: Dict[str, Any]
+
+        :return: The URL with the endpoint and query.
+        :rtype: str
+        """
+
+        # Return the URL with the endpoint and query
+        return (
+            f"{self._configuration['url']}/{value}?{f"key=value&".join(kwargs.items())}"
+        )
+
+    def with_fragment(
+        self,
+        value: str,
+    ) -> str:
+        """
+        Set the fragment of the URL.
+
+        :param value: The fragment of the URL.
+        :type value: str
+
+        :return: The URL with the fragment.
+        :rtype: str
+        """
+
+        # Return the URL with the fragment
+        return f"{self._configuration['url']}#{value}"
+
+    def with_query(
+        self,
+        **kwargs: Any,
+    ) -> str:
+        """
+        Set the query of the URL.
+
+        :param kwargs: The query of the URL.
+        :type kwargs: Dict[str, Any]
+
+        :return: The URL with the query.
+        :rtype: str
+        """
+
+        # Return the URL with the query
+        return f"{self._configuration['url']}?{f"key=value&".join(kwargs.items())}"
