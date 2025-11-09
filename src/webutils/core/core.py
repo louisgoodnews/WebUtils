@@ -1061,7 +1061,7 @@ class HTTPService:
                     builder.with_status(value=response.status)
 
                     # Set the type of the response
-                    builder.with_type(value=str.JSON)
+                    builder.with_type(value=response.content_type)
 
                     # Set the message of the response
                     builder.with_message(value=response.reason)
@@ -1161,7 +1161,7 @@ class HTTPService:
                     builder.with_status(value=response.status)
 
                     # Set the type of the response
-                    builder.with_type(value=str.JSON)
+                    builder.with_type(value=response.content_type)
 
                     # Set the message of the response
                     builder.with_message(value=response.reason)
@@ -1261,7 +1261,7 @@ class HTTPService:
                     builder.with_status(value=response.status)
 
                     # Set the type of the response
-                    builder.with_type(value=str.JSON)
+                    builder.with_type(value=response.content_type)
 
                     # Set the message of the response
                     builder.with_message(value=response.reason)
@@ -1361,7 +1361,7 @@ class HTTPService:
                     builder.with_status(value=response.status)
 
                     # Set the type of the response
-                    builder.with_type(value=str.JSON)
+                    builder.with_type(value=response.content_type)
 
                     # Set the message of the response
                     builder.with_message(value=response.reason)
@@ -1454,7 +1454,7 @@ class HTTPService:
                     builder.with_status(value=response.status)
 
                     # Set the type of the response
-                    builder.with_type(value=str.JSON)
+                    builder.with_type(value=response.content_type)
 
                     # Set the message of the response
                     builder.with_message(value=response.reason)
@@ -1537,7 +1537,7 @@ class HTTPService:
                     builder.with_status(value=response.status)
 
                     # Set the type of the response
-                    builder.with_type(value=str.JSON)
+                    builder.with_type(value=response.content_type)
 
                     # Set the message of the response
                     builder.with_message(value=response.reason)
@@ -1558,6 +1558,91 @@ class HTTPService:
         # Return the HTTPResponse object
         return asyncio.run(
             __trace__(
+                url=url,
+                **kwargs,
+            )
+        )
+
+    @classmethod
+    def head(
+        cls,
+        url: str,
+        **kwargs,
+    ) -> HTTPResponse:
+        """
+        Make a HEAD request to the specified URL.
+
+        :param url: The URL to make the HEAD request to.
+        :type url: str
+        :param kwargs: Additional keyword arguments to pass to the HEAD request.
+        :type kwargs: Dict[str, Any]
+
+        :return: The HTTPResponse object.
+        :rtype: HTTPResponse
+        """
+
+        async def __head__(
+            url: str,
+            headers: Dict[str, Any] = {},
+            **kwargs,
+        ) -> HTTPResponse:
+            """
+            Make a HEAD request to the specified URL.
+
+            :param url: The URL to make the HEAD request to.
+            :type url: str
+            :param kwargs: Additional keyword arguments to pass to the HEAD request.
+            :type kwargs: Dict[str, Any]
+
+            :return: The HTTPResponse object.
+            :rtype: HTTPResponse
+            """
+
+            # Initialize the builder
+            builder: HTTPResponseBuilder = HTTPResponseBuilder()
+
+            # Set the method of the response
+            builder.with_method(value=HTTPMethod.HEAD)
+
+            # Set the headers of the response
+            builder.with_headers(value=headers)
+
+            # Set the URL of the response
+            builder.with_url(value=url)
+
+            # Set the start time of the response
+            builder.with_start(value=datetime.now())
+
+            async with aiohttp.ClientSession() as session:
+                async with session.head(
+                    url,
+                    **kwargs,
+                ) as response:
+                    # Set the status of the response
+                    builder.with_status(value=response.status)
+
+                    # Set the type of the response
+                    builder.with_type(value=response.content_type)
+
+                    # Set the message of the response
+                    builder.with_message(value=response.reason)
+
+                    builder.with_body(
+                        await cls._handle_content_type(
+                            content_type=response.content_type,
+                            response=response,
+                        )
+                    )
+
+                    # Set the end time of the response
+                    builder.with_end(value=datetime.now())
+
+            # Return the HTTPResponse object
+            return builder.build()
+
+        # Return the HTTPResponse object
+        return asyncio.run(
+            __head__(
                 url=url,
                 **kwargs,
             )
