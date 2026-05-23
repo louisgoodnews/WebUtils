@@ -3,8 +3,8 @@ Author: Louis Goodnews
 Date: 2025-08-08
 """
 
-from typing import Any, Dict, Optional, Self
-from urllib.parse import urlencode, urlparse, urlunparse
+from typing import Any, Dict, List, Optional, Self, Union
+from urllib.parse import urlencode, parse_qs, urlparse, urlunparse
 
 
 class URL:
@@ -360,6 +360,400 @@ class URL:
         }
 
 
+class URLQuery:
+    """
+    URLQuery class for managing URL query parameters.
+
+    This class provides an object-oriented interface to query parameter manipulation,
+    with support for multiple values per parameter and type-safe operations.
+    """
+
+    def __init__(
+        self,
+        query: Optional[str] = None,
+        params: Optional[Dict[str, Union[str, List[str]]]] = None,
+    ) -> None:
+        """
+        Initialize the URLQuery object.
+
+        :param query: The query string (e.g., "key1=value1&key2=value2").
+        :type query: Optional[str]
+        :param params: Dictionary of parameters (can have list values for multiple values).
+        :type params: Optional[Dict[str, Union[str, List[str]]]]
+
+        :return: None
+        :rtype: None
+        """
+        if params:
+            self._params: Dict[str, List[str]] = {
+                k: [v] if isinstance(v, str) else v for k, v in params.items()
+            }
+        elif query:
+            self._params = parse_qs(query)
+        else:
+            self._params = {}
+
+    def __str__(self) -> str:
+        """
+        Return the query string.
+
+        :return: The query string.
+        :rtype: str
+        """
+        return urlencode(self._params, doseq=True)
+
+    def __repr__(self) -> str:
+        """
+        Return the string representation of the URLQuery object.
+
+        :return: The string representation.
+        :rtype: str
+        """
+        return f"URLQuery('{str(self)}')"
+
+    def __getitem__(self, key: str) -> List[str]:
+        """
+        Get the value(s) for a parameter key.
+
+        :param key: The parameter key.
+        :type key: str
+
+        :return: The value(s) for the key.
+        :rtype: List[str]
+        """
+        return self._params.get(key, [])
+
+    def __setitem__(self, key: str, value: Union[str, List[str]]) -> None:
+        """
+        Set the value(s) for a parameter key.
+
+        :param key: The parameter key.
+        :type key: str
+        :param value: The value(s) for the key.
+        :type value: Union[str, List[str]]
+
+        :return: None
+        :rtype: None
+        """
+        self._params[key] = [value] if isinstance(value, str) else value
+
+    def __delitem__(self, key: str) -> None:
+        """
+        Delete a parameter key.
+
+        :param key: The parameter key.
+        :type key: str
+
+        :return: None
+        :rtype: None
+        """
+        del self._params[key]
+
+    def __contains__(self, key: str) -> bool:
+        """
+        Check if a parameter key exists.
+
+        :param key: The parameter key.
+        :type key: str
+
+        :return: True if the key exists, False otherwise.
+        :rtype: bool
+        """
+        return key in self._params
+
+    def __len__(self) -> int:
+        """
+        Return the number of parameters.
+
+        :return: The number of parameters.
+        :rtype: int
+        """
+        return len(self._params)
+
+    def __iter__(self):
+        """
+        Iterate over parameter keys.
+
+        :return: Iterator over parameter keys.
+        :rtype: Iterator[str]
+        """
+        return iter(self._params)
+
+    @property
+    def params(self) -> Dict[str, List[str]]:
+        """
+        Get the parameters dictionary.
+
+        :return: The parameters dictionary.
+        :rtype: Dict[str, List[str]]
+        """
+        return self._params.copy()
+
+    def add(self, key: str, value: Union[str, List[str]]) -> Self:
+        """
+        Add a parameter (or append to existing).
+
+        :param key: The parameter key.
+        :type key: str
+        :param value: The value(s) for the key.
+        :type value: Union[str, List[str]]
+
+        :return: Self for method chaining.
+        :rtype: Self
+        """
+        if key in self._params:
+            if isinstance(value, str):
+                self._params[key].append(value)
+            else:
+                self._params[key].extend(value)
+        else:
+            self._params[key] = [value] if isinstance(value, str) else value
+        return self
+
+    def set(self, key: str, value: Union[str, List[str]]) -> Self:
+        """
+        Set a parameter (overwrites existing).
+
+        :param key: The parameter key.
+        :type key: str
+        :param value: The value(s) for the key.
+        :type value: Union[str, List[str]]
+
+        :return: Self for method chaining.
+        :rtype: Self
+        """
+        self._params[key] = [value] if isinstance(value, str) else value
+        return self
+
+    def remove(self, key: str) -> Self:
+        """
+        Remove a parameter.
+
+        :param key: The parameter key.
+        :type key: str
+
+        :return: Self for method chaining.
+        :rtype: Self
+        """
+        if key in self._params:
+            del self._params[key]
+        return self
+
+    def get(self, key: str, default: Optional[List[str]] = None) -> List[str]:
+        """
+        Get the value(s) for a parameter key with default.
+
+        :param key: The parameter key.
+        :type key: str
+        :param default: The default value if key doesn't exist.
+        :type default: Optional[List[str]]
+
+        :return: The value(s) for the key or default.
+        :rtype: List[str]
+        """
+        return self._params.get(key, default or [])
+
+    def get_first(self, key: str, default: Optional[str] = None) -> str:
+        """
+        Get the first value for a parameter key with default.
+
+        :param key: The parameter key.
+        :type key: str
+        :param default: The default value if key doesn't exist.
+        :type default: Optional[str]
+
+        :return: The first value for the key or default.
+        :rtype: str
+        """
+        values = self._params.get(key, [])
+        return values[0] if values else default or ""
+
+    def has(self, key: str) -> bool:
+        """
+        Check if a parameter key exists.
+
+        :param key: The parameter key.
+        :type key: str
+
+        :return: True if the key exists, False otherwise.
+        :rtype: bool
+        """
+        return key in self._params
+
+    def clear(self) -> Self:
+        """
+        Clear all parameters.
+
+        :return: Self for method chaining.
+        :rtype: Self
+        """
+        self._params.clear()
+        return self
+
+    def to_dict(self) -> Dict[str, Union[str, List[str]]]:
+        """
+        Convert to dictionary (single values as strings, multiple as lists).
+
+        :return: Dictionary representation.
+        :rtype: Dict[str, Union[str, List[str]]]
+        """
+        return {k: v[0] if len(v) == 1 else v for k, v in self._params.items()}
+
+    def copy(self) -> "URLQuery":
+        """
+        Create a copy of the URLQuery object.
+
+        :return: A copy of the URLQuery object.
+        :rtype: URLQuery
+        """
+        return URLQuery(params=self._params.copy())
+
+
+class URLQueryFactory:
+    """
+    URLQuery Factory class.
+
+    This class provides factory methods to create URLQuery objects.
+    """
+
+    @classmethod
+    def create_query(cls, query: Optional[str] = None) -> URLQuery:
+        """
+        Create a URLQuery object from a query string.
+
+        :param query: The query string.
+        :type query: Optional[str]
+
+        :return: The URLQuery object.
+        :rtype: URLQuery
+        """
+        return URLQuery(query=query)
+
+    @classmethod
+    def from_params(cls, params: Dict[str, Union[str, List[str]]]) -> URLQuery:
+        """
+        Create a URLQuery object from a parameters dictionary.
+
+        :param params: The parameters dictionary.
+        :type params: Dict[str, Union[str, List[str]]]
+
+        :return: The URLQuery object.
+        :rtype: URLQuery
+        """
+        return URLQuery(params=params)
+
+    @classmethod
+    def from_url(cls, url: str) -> URLQuery:
+        """
+        Create a URLQuery object from a URL string.
+
+        :param url: The URL string.
+        :type url: str
+
+        :return: The URLQuery object.
+        :rtype: URLQuery
+        """
+        parsed = urlparse(url)
+        return URLQuery(query=parsed.query)
+
+
+class URLQueryBuilder:
+    """
+    URLQuery Builder class.
+
+    This class provides a fluent builder interface for constructing URLQuery objects.
+    """
+
+    def __init__(self, query: Optional[str] = None) -> None:
+        """
+        Initialize the URLQueryBuilder.
+
+        :param query: The initial query string.
+        :type query: Optional[str]
+
+        :return: None
+        :rtype: None
+        """
+        self._query: URLQuery = URLQuery(query=query)
+
+    def add_param(self, key: str, value: Union[str, List[str]]) -> Self:
+        """
+        Add a parameter (or append to existing).
+
+        :param key: The parameter key.
+        :type key: str
+        :param value: The value(s) for the key.
+        :type value: Union[str, List[str]]
+
+        :return: Self for method chaining.
+        :rtype: Self
+        """
+        self._query.add(key, value)
+        return self
+
+    def set_param(self, key: str, value: Union[str, List[str]]) -> Self:
+        """
+        Set a parameter (overwrites existing).
+
+        :param key: The parameter key.
+        :type key: str
+        :param value: The value(s) for the key.
+        :type value: Union[str, List[str]]
+
+        :return: Self for method chaining.
+        :rtype: Self
+        """
+        self._query.set(key, value)
+        return self
+
+    def remove_param(self, key: str) -> Self:
+        """
+        Remove a parameter.
+
+        :param key: The parameter key.
+        :type key: str
+
+        :return: Self for method chaining.
+        :rtype: Self
+        """
+        self._query.remove(key)
+        return self
+
+    def clear_params(self) -> Self:
+        """
+        Clear all parameters.
+
+        :return: Self for method chaining.
+        :rtype: Self
+        """
+        self._query.clear()
+        return self
+
+    def with_params(self, params: Dict[str, Union[str, List[str]]]) -> Self:
+        """
+        Set multiple parameters at once.
+
+        :param params: The parameters dictionary.
+        :type params: Dict[str, Union[str, List[str]]]
+
+        :return: Self for method chaining.
+        :rtype: Self
+        """
+        self._query.clear()
+        for key, value in params.items():
+            self._query.set(key, value)
+        return self
+
+    def build(self) -> URLQuery:
+        """
+        Build and return the URLQuery object.
+
+        :return: The URLQuery object.
+        :rtype: URLQuery
+        """
+        return self._query
+
+
 class URLFactory:
     """
     URL Factory class.
@@ -436,6 +830,7 @@ class URLBuilder:
 
         # Initialize the configuration
         self._configuration: Dict[str, str] = {"url": url}
+        self._query_builder: Optional[URLQueryBuilder] = None
 
     def build(self) -> URL:
         """
@@ -444,7 +839,16 @@ class URLBuilder:
         :return: The URL object.
         :rtype: URL
         """
-        return URLFactory.create_url(self._configuration["url"])
+        url = self._configuration["url"]
+
+        # Apply query parameters if URLQueryBuilder is set
+        if self._query_builder:
+            query = self._query_builder.build()
+            if str(query):
+                separator = "&" if "?" in url else "?"
+                url = f"{url}{separator}{str(query)}"
+
+        return URLFactory.create_url(url)
 
     def with_endpoint(
         self,
@@ -526,11 +930,29 @@ class URLBuilder:
         :rtype: Self
         """
 
-        # Set the query
-        query_string = urlencode(kwargs)
-        self._configuration["url"] = f"{self._configuration['url']}?{query_string}"
+        # Use URLQueryBuilder for query parameter management
+        if self._query_builder is None:
+            self._query_builder = URLQueryBuilder()
 
-        # Return the builder to the caller
+        for key, value in kwargs.items():
+            self._query_builder.set_param(key, str(value))
+
+        return self
+
+    def with_query_builder(
+        self,
+        query_builder: URLQueryBuilder,
+    ) -> Self:
+        """
+        Set the query using a URLQueryBuilder.
+
+        :param query_builder: The URLQueryBuilder object.
+        :type query_builder: URLQueryBuilder
+
+        :return: The builder to the caller.
+        :rtype: Self
+        """
+        self._query_builder = query_builder
         return self
 
     def with_url(

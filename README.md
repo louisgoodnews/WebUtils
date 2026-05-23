@@ -14,6 +14,8 @@ A lightweight, asynchronous HTTP client library for Python that simplifies makin
 - 📦 **Response Handling**: Automatic JSON parsing and type conversion
 - ⏱️ **Request Timing**: Built-in timing metrics for performance monitoring
 - 🛡️ **Error Handling**: Comprehensive error handling and status code management
+- 🔗 **URL Manipulation**: pathlib-like URL class for intuitive URL construction and manipulation
+- 📝 **Query Parameter Management**: URLQuery class for automated query parameter building and management
 - 🧪 **Tested**: Includes unit tests for reliability
 
 ## Installation
@@ -38,6 +40,41 @@ response = HTTPService.post(
     "https://api.example.com/items",
     data={"name": "New Item", "value": 42}
 )
+```
+
+## URL Query Parameters
+
+```python
+from webutils import URLQuery, URLQueryFactory, URLQueryBuilder
+
+# Using URLQuery directly
+query = URLQuery(params={"key": "value", "page": "1"})
+print(str(query))  # "key=value&page=1"
+
+# Add multiple values to the same parameter
+query.add("tag", "python")
+query.add("tag", "web")
+print(str(query))  # "key=value&page=1&tag=python&tag=web"
+
+# Using URLQueryBuilder for fluent API
+query = (URLQueryBuilder()
+         .add_param("key", "value")
+         .add_param("page", "1")
+         .build())
+
+# Using URLQueryFactory
+query = URLQueryFactory.from_url("https://example.com?key=value&page=1")
+print(query.get_first("key"))  # "value"
+print(query.get_first("page"))  # "1"
+
+# Using URLBuilder with URLQuery
+from webutils import URLBuilder
+
+url = (URLBuilder("https://api.example.com")
+       .with_endpoint("search")
+       .with_query(q="python", page=1)
+       .build())
+print(str(url))  # "https://api.example.com/search?q=python&page=1"
 ```
 
 ## Authentication
